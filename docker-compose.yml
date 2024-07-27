@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  jackson-load-balancer:
+    build: . # Build Load Balancer Docker Image From Current Directory
+    ports:
+      - '5555:5555' # Expose Port 5555 For HTTP Requests
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/usr/src/jackson-load-balancer
+    environment:
+      - .env # Reference .env File For Environment Variables
+    networks:
+      - jackson-network
+
+  mongodb:
+    image: mongo:latest
+    ports: '27017:27017'
+    volumes:
+      - mongodb-data:/data/db # Persist MongoDB Data
+    networks:
+      - jackson-network
+
+networks:
+  jackson-network: # Custom Network For Container Communication
+    driver: bridge
+    external: true # Allow External Access
