@@ -5,7 +5,7 @@ import docsRoute from './docs.route';
 import centralRoute from './central.route';
 import config from '../../config/config';
 
-export const router = express.Router();
+const router = express.Router();
 
 const defaultRoutes = [
 	{
@@ -17,7 +17,7 @@ const defaultRoutes = [
 		route: userRoute,
 	},
 	{
-		path: '/central',
+		path: '/api',
 		route: centralRoute,
 	},
 ];
@@ -34,7 +34,7 @@ defaultRoutes.forEach((route) => {
 });
 
 /* istanbul ignore next */
-if (config.env === 'DEVELOPMENT') {
+if (config.env === 'development') {
 	devRoutes.forEach((route) => {
 		router.use(route.path, route.route);
 	});

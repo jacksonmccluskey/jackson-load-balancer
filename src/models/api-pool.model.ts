@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import validator from 'validator';
 import plugins from './plugins';
 
-const urlSchema = new mongoose.Schema({
+export const urlSchema = new mongoose.Schema({
 	url: {
 		type: String,
 		required: true,
@@ -14,29 +14,25 @@ const urlSchema = new mongoose.Schema({
 		},
 	},
 	isHealthy: { type: Boolean, required: true, default: false },
-	lastChecked: { type: Date, required: false },
+	enoughTime: { type: Number, required: false, default: 60000 },
+	lastTime: { type: Date, required: false },
 	weight: { type: Number, required: false },
 });
 
-const apiPoolSchema = new mongoose.Schema(
-	{
-		name: {
-			type: String,
-			required: true,
-			trim: true,
-		},
-		urls: [urlSchema],
-		currentURLIndex: {
-			type: Number,
-			required: true,
-			unique: true,
-			default: 0,
-		},
+export const apiPoolSchema = new mongoose.Schema({
+	name: {
+		type: String,
+		required: true,
+		trim: true,
 	},
-	{
-		timestamps: true,
-	}
-);
+	urls: [urlSchema],
+	currentURLIndex: {
+		type: Number,
+		required: true,
+		unique: true,
+		default: 0,
+	},
+});
 
 apiPoolSchema.plugin(plugins.toJSON);
 apiPoolSchema.plugin(plugins.paginate);
@@ -50,6 +46,7 @@ apiPoolSchema.statics.isAPIPoolNameTaken = async function (
 	name: string
 ): Promise<boolean> {
 	const apiPool = await this.findOne({ name });
+
 	return !!apiPool;
 };
 

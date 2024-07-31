@@ -4,6 +4,12 @@ import userService from './user.service';
 import ApiError from '../utils/api-error';
 import { tokenTypes } from '../config/tokens';
 import models from '../models';
+import bcrypt from 'bcryptjs';
+
+const isPasswordMatching = async (user?: any, password?: string) => {
+	if (user && password) return await bcrypt.compare(password, user.password);
+	return false;
+};
 
 /**
  * Login with username and password
@@ -16,8 +22,8 @@ export const loginUserWithEmailAndPassword = async (
 	password: string
 ): Promise<typeof models.User> => {
 	const user = await userService.getUserByEmail(email);
-	if (!user || !(await user.isPasswordMatch(password))) {
-		throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
+	if (!user || !(await isPasswordMatching(user, password))) {
+		throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect Email Or Password');
 	}
 	return user;
 };
@@ -80,13 +86,14 @@ export const resetPassword = async (
 		if (!user) {
 			throw new Error();
 		}
-		await userService.updateUserById(user.id, { password: newPassword });
+		const hashedNewPassword = await bcrypt.hash(newPassword, 8);
+		await userService.updateUserById(user.id, { password: hashedNewPassword });
 		await models.Token.deleteMany({
 			user: user.id,
 			type: tokenTypes.RESET_PASSWORD,
 		});
 	} catch (error) {
-		throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed');
+		throw new ApiError(httpStatus.UNAUTHORIZED, 'Password Reset Failed');
 	}
 };
 

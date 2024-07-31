@@ -2,8 +2,10 @@ import httpStatus from 'http-status';
 import catchAsync from '../utils/catch-async';
 import services from '../services';
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 
 export const register = catchAsync(async (req: Request, res: Response) => {
+	req.body.password = await bcrypt.hash(req.body.password, 8);
 	const user = await services.userService.createUser(req.body);
 	const tokens = await services.tokenService.generateAuthTokens(user);
 	res.status(httpStatus.CREATED).send({ user, tokens });
@@ -11,6 +13,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
 
 export const login = catchAsync(async (req: Request, res: Response) => {
 	const { email, password } = req.body;
+
 	const user = await services.authService.loginUserWithEmailAndPassword(
 		email,
 		password

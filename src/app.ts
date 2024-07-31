@@ -1,17 +1,15 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction } from 'express';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import cors from 'cors';
 import passport from 'passport';
-import httpStatus from 'http-status';
 import config from './config/config';
 import morgan from './config/morgan';
 import { jwtStrategy } from './config/passport';
 import { authLimiter } from './middlewares/rate-limiter';
 import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
-import ApiError from './utils/api-error';
 
 const app = express();
 
@@ -27,15 +25,12 @@ app.use(mongoSanitize());
 app.use(compression());
 app.use(cors());
 app.use(passport.initialize());
-app.use('/v1', routes);
-app.use((_req: Request, _res: Response, next) => {
-	next(new ApiError(httpStatus.NOT_FOUND, 'Not Found'));
-});
+app.use('/', routes);
 app.use(errorConverter);
 app.use(errorHandler);
 
 if (config.env === 'PRODUCTION') {
-	app.use('/v1/auth', authLimiter);
+	app.use('/auth', authLimiter);
 }
 
 passport.use('jwt', jwtStrategy);

@@ -34,11 +34,17 @@ const envVarsSchema = Joi.object()
 		API_POOLS_COLLECTION_NAME: Joi.string().description(
 			'Name Of MongoDB Collection With API Pools For Load Balancing'
 		),
-		INITIAL_API_POOL_NAME: Joi.string().description(
-			'Name Of Initial Document Containing Initial API Pool'
-		),
-		INITIAL_API_POOL_URLS: Joi.string().description(
-			'Comma Separated List Of Initial URLs For Initial API Pool'
+		INITIAL_API_POOL_NAME: Joi.string()
+			.description('Name Of Initial Document Containing Initial API Pool')
+			.default('initial'),
+		INITIAL_API_POOL_URLS: Joi.string()
+			.description('Comma Separated List Of Initial URLs For Initial API Pool')
+			.default([]),
+		HEALTH_CHECK_ENOUGH_TIME: Joi.number()
+			.description('Minimum Time Interval Between Health Checks')
+			.default(0),
+		INITIAL_API_HEALTH_CHECK_ROUTE: Joi.string().description(
+			'Route For Conducting Health Checks On API With GET Request'
 		),
 	})
 	.unknown();
@@ -85,4 +91,6 @@ export default {
 	apiPoolCollection: envVars.API_POOL_COLLECTION_NAME,
 	initialAPIPoolName: envVars.INITIAL_API_POOL_NAME,
 	initialAPIPoolURLS: envVars.INITIAL_API_POOL_URLS,
+	healthCheckEnoughTime: envVars.HEALTH_CHECK_ENOUGH_TIME,
+	initialAPIHealthCheckRoute: envVars.INITIAL_API_HEALTH_CHECK_ROUTE,
 };

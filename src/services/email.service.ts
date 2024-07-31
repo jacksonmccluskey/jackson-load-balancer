@@ -10,7 +10,7 @@ if (config.env !== 'test') {
 		.then(() => logger.info('Connected To Email Server'))
 		.catch(() =>
 			logger.warn(
-				'Unable to connect to email server. Make sure you have configured the SMTP options in .env'
+				'Unable To Connect To Email Server. Make Sure You Configured SMTP Options In .env'
 			)
 		);
 }

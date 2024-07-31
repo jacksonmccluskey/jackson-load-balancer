@@ -10,6 +10,6 @@
 		"baseUrl": "./lib",
 		"resolveJsonModule": true
 	},
-	"include": ["lib/**/*.ts"],
+	"include": ["**/*.ts"],
 	"exclude": ["node_modules", "index.js"]
 }

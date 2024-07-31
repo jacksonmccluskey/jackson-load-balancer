@@ -1,13 +1,25 @@
-import httpStatus from 'http-status';
+import { RequestMethod } from '../routes/v1/central.route';
 import catchAsync from '../utils/catch-async';
 import services from '../services';
+import { Request, Response } from 'express';
 
-export const checkAPIHealth = catchAsync(async (req, res) => {
-	const isAPIHealthy = await services.centralService.checkAPIHealth(req.body);
-	if (isAPIHealthy) res.status(httpStatus[200]).send(isAPIHealthy);
-	else res.status(httpStatus.IM_A_TEAPOT).send(isAPIHealthy);
+const destructureRequestInfo = (req: Request) => {
+	return {
+		apiPoolName: req.body.apiPoolName,
+		requestBody: req.body,
+		originalURL: req.originalUrl,
+		requestMethod: req.method,
+	};
+};
+
+const controller = catchAsync(async (req: Request, res: Response) => {
+	const requestInfo = destructureRequestInfo(req);
+
+	const apiResponse = await services.centralService[
+		req.method as RequestMethod
+	](requestInfo);
+
+	res.send(apiResponse.data);
 });
 
-export default {
-	checkAPIHealth,
-};
+export default controller;
