@@ -3,6 +3,7 @@ import emailService from './email.service';
 import tokenService from './token.service';
 import userService from './user.service';
 import centralService from './central.service';
+import logService from './log.service';
 
 export default {
 	authService,
@@ -10,4 +11,5 @@ export default {
 	tokenService,
 	userService,
 	centralService,
+	logService,
 };

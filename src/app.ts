@@ -1,4 +1,7 @@
-import express, { NextFunction } from 'express';
+// Copyright © 2024 Jackson McCluskey
+// GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
+
+import express from 'express';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';

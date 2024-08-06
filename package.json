@@ -2,10 +2,9 @@
 	"name": "node-load-balancer",
 	"version": "1.7.0",
 	"description": "Simple \"round robin\" load balancer with a try-catch approach.",
-	"bin": "bin/createNodejsApp.js",
 	"main": "src/index.js",
 	"repository": "https://github.com/jacksonmccluskey/node-load-balancer.git",
-	"author": "Jackson <jackson@pacificgyre.com>",
+	"author": "Jackson @jacksonmccluskey",
 	"license": "MIT",
 	"engines": {
 		"node": ">=12.0.0"
@@ -69,11 +68,14 @@
 		"nodemailer": "^6.3.1",
 		"passport": "^0.4.0",
 		"passport-jwt": "^4.0.0",
+		"path": "^0.12.7",
 		"pm2": "^5.1.0",
 		"swagger-jsdoc": "^6.0.8",
 		"swagger-ui-express": "^4.1.6",
 		"validator": "^13.0.0",
-		"winston": "^3.2.1",
+		"winston": "^3.13.1",
+		"winston-cloudwatch": "^6.3.0",
+		"winston-daily-rotate-file": "^5.0.0",
 		"xss-clean": "^0.1.1"
 	},
 	"devDependencies": {
@@ -82,6 +84,7 @@
 		"@types/cors": "^2.8.17",
 		"@types/express": "^4.17.21",
 		"@types/morgan": "^1.9.9",
+		"@types/nodemailer": "^6.4.15",
 		"@types/passport": "^1.0.16",
 		"@types/passport-jwt": "^4.0.1",
 		"@types/swagger-jsdoc": "^6.0.4",

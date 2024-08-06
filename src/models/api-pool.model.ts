@@ -1,3 +1,6 @@
+// Copyright © 2024 Jackson McCluskey
+// GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
+
 import mongoose from 'mongoose';
 import validator from 'validator';
 import plugins from './plugins';

@@ -46,6 +46,18 @@ const envVarsSchema = Joi.object()
 		INITIAL_API_HEALTH_CHECK_ROUTE: Joi.string().description(
 			'Route For Conducting Health Checks On API With GET Request'
 		),
+		CLOUDWATCH_LOGS_LOG_GROUP_NAME: Joi.string().description(
+			'Cloudwatch Logs Log Group'
+		),
+		CLOUDWATCH_LOGS_LOG_STREAM_NAME: Joi.string().description(
+			'Cloudwatch Logs Log Stream'
+		),
+		CLOUDWATCH_LOGS_AWS_REGION: Joi.string().description(
+			'Region Of Cloudwatch Logs'
+		),
+		LOG_FILE_DIRECTORY_NAME: Joi.string().description(
+			'Location Of Backup Log Files'
+		),
 	})
 	.unknown();
 
@@ -88,9 +100,12 @@ export default {
 		},
 		from: envVars.EMAIL_FROM,
 	},
-	apiPoolCollection: envVars.API_POOL_COLLECTION_NAME,
+	apiPoolCollectionName: envVars.API_POOL_COLLECTION_NAME,
 	initialAPIPoolName: envVars.INITIAL_API_POOL_NAME,
 	initialAPIPoolURLS: envVars.INITIAL_API_POOL_URLS,
 	healthCheckEnoughTime: envVars.HEALTH_CHECK_ENOUGH_TIME,
 	initialAPIHealthCheckRoute: envVars.INITIAL_API_HEALTH_CHECK_ROUTE,
+	cloudwatchLogsLogGroupName: envVars.CLOUDWATCH_LOGS_LOG_GROUP_NAME,
+	cloudwatchLogsAWSRegion: envVars.CLOUDWATCH_LOGS_AWS_REGION,
+	logFileDirectoryName: envVars.LOG_FILE_DIRECTORY_NAME,
 };

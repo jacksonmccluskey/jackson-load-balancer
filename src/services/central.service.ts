@@ -1,9 +1,29 @@
-import axios, { AxiosResponse } from 'axios';
-import models from '../models';
+// Copyright © 2024 Jackson McCluskey
+// GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
+
+import axios from 'axios';
+import httpStatus from 'http-status';
 import config from '../config/config';
-import { hasBeenEnoughTime } from '../utils/has-been-enough-time';
+import logController from '../controllers/log.controller';
 import { RequestMethod } from '../routes/v1/central.route';
-import logger from '../config/logger';
+
+const apiPool = {
+	urls: config.initialAPIPoolURLS.split(',').map((url: string) => {
+		return {
+			url: url,
+			isHealthy: false,
+		};
+	}),
+	currentURLIndex: 0,
+};
+
+const cleanupURL = (url?: string) => {
+	if (url && typeof url == 'string') {
+		return url.charAt(url.length - 1) == '/'
+			? url.substring(0, url.length - 1)
+			: url;
+	}
+};
 
 /**
  * Check API Health
@@ -11,21 +31,24 @@ import logger from '../config/logger';
  * @returns {boolean}
  */
 const checkAPIHealth = async (url?: string): Promise<boolean> => {
-	if (url) {
-		try {
-			const healthCheckURL = `${url}${config.initialAPIHealthCheckRoute}`;
-
-			const healthCheck = await axios.get(healthCheckURL);
-
-			return healthCheck.status === 200;
-		} catch {}
+	if (!url) {
+		return false;
 	}
 
-	return false;
+	try {
+		const healthCheck = await axios.get(
+			`${cleanupURL(url)}${config.initialAPIHealthCheckRoute}`
+		);
+
+		return healthCheck.status === 200;
+	} catch (error: any) {
+		throw new Error(`🟥 Health Check Request Failed ${error?.message}`);
+	}
 };
 
 interface IGetCurrentURL {
-	name?: string;
+	urls: any[];
+	urlIndex: number;
 	attempts?: number;
 }
 
@@ -35,172 +58,98 @@ interface IGetCurrentURL {
  * @returns {string}
  */
 const getCurrentURL = async ({
-	name = config.initialAPIPoolName,
+	urls,
+	urlIndex,
 	attempts = 0,
 }: IGetCurrentURL): Promise<string> => {
-	const apiPool = await models.APIPool.findOne({
-		name,
-	});
-
-	if (!apiPool) {
-		throw new Error('The Requested API Pool Does Not Exist');
+	if (attempts >= urls?.length) {
+		throw new Error(
+			`None Of The APIs In This API Pool Are Healthy: ${JSON.stringify(urls)}`
+		);
 	}
 
-	const { currentURLIndex, urls } = apiPool;
-
-	if (attempts > urls.length) {
-		// TODO: Save Request Body To CloudWatch Logs
-		throw new Error('None Of The APIs In This API Pool Are Healthy');
-	}
-
-	if (currentURLIndex >= urls?.length) {
+	if (urlIndex >= urls?.length) {
 		throw new Error(
 			'Current URL Index Out Of Bounds. Manual Data Intervention Is Required.'
 		);
 	}
 
-	const currentURL = urls[currentURLIndex];
+	const currentURL = urls[urlIndex];
 
-	const nextCurrentURLIndex =
-		currentURLIndex >= urls.length - 1 ? 0 : currentURLIndex + 1;
+	const nextCurrentURLIndex = urlIndex >= urls.length - 1 ? 0 : urlIndex + 1;
 
-	const isAPIHealthy = await checkAPIHealth(currentURL.url);
+	try {
+		const isAPIHealthy = await checkAPIHealth(currentURL.url);
 
-	if (!isAPIHealthy) {
-		await models.APIPool.updateOne(
-			{ 'urls._id': currentURL._id },
-			{
-				$set: {
-					[`urls.${currentURLIndex}`]: {
-						isHealthy: false,
-						lastTime: new Date(),
-						url: currentURL.url,
-					},
-					currentURLIndex: nextCurrentURLIndex,
-				},
-			}
-		);
-
-		return getCurrentURL({ name, attempts: attempts + 1 });
-	}
-
-	await models.APIPool.updateOne(
-		{ 'urls._id': currentURL._id },
-		{
-			$set: {
-				[`urls.${currentURLIndex}`]: {
-					isHealthy: true,
-					url: currentURL.url,
-					lastTime: currentURL.lastTime,
-				},
-				currentURLIndex: nextCurrentURLIndex,
-			},
+		if (!isAPIHealthy) {
+			throw new Error('Current API Is Not Healthy');
 		}
-	);
 
-	return currentURL.url;
+		apiPool.urls[urlIndex].isHealthy = true;
+		apiPool.currentURLIndex = nextCurrentURLIndex;
+
+		return currentURL.url;
+	} catch {
+		apiPool.urls[urlIndex].isHealthy = false;
+
+		return getCurrentURL({
+			urls,
+			urlIndex: nextCurrentURLIndex,
+			attempts: attempts + 1,
+		});
+	}
 };
 
-const getTargetURL = async (apiPoolName: string, originalURL: string) => {
-	const currentURL = await getCurrentURL({ name: apiPoolName });
+const getTargetURL = async (originalURL?: string): Promise<string> => {
+	const { urls, currentURLIndex } = apiPool;
 
-	if (currentURL.charAt(currentURL.length - 1) == '/') {
-		return `${currentURL.substring(0, currentURL.length - 1)}${originalURL}`;
-	}
+	const currentURL = await getCurrentURL({ urls, urlIndex: currentURLIndex });
 
-	if (originalURL.charAt(originalURL.length - 1) != '/') {
-		return `${currentURL}/${originalURL}`;
-	}
+	if (currentURL) return `${cleanupURL(currentURL)}${originalURL}`;
 
-	const targetURL = `${currentURL}${originalURL}`;
-
-	return targetURL;
+	throw new Error('There Is No Available URL.');
 };
 
-interface IRequestToCurrentAPI {
-	apiPoolName?: string;
+export interface IRequestToCurrentAPI {
+	requestMethod?: RequestMethod;
 	requestBody?: any;
 	originalURL?: string;
 }
 
 /**
- * Post Data To Current API
+ * Call Request Method With Request Body To Current URL With Original URL
  * @param {IRequestToCurrentAPI}
  * @returns {Promise<any>}
  */
-const postService = async ({
-	apiPoolName,
+const requestMethodToTargetURL = async ({
+	requestMethod,
 	requestBody,
 	originalURL,
-}: IRequestToCurrentAPI): Promise<AxiosResponse<any, any>> => {
-	const targetURL = await getTargetURL(apiPoolName, originalURL);
+}: IRequestToCurrentAPI): Promise<any> => {
+	if (requestMethod && originalURL) {
+		try {
+			const targetURL = await getTargetURL(originalURL);
 
-	return await axios.post(targetURL, requestBody);
+			return await axios[requestMethod.toLowerCase()](targetURL, requestBody);
+		} catch (error: any) {
+			const defaultMessage = 'Unknown Error Getting URL & Making Request';
+
+			await logController.logAnything({
+				status: 'ERROR',
+				title: 'Load Balancer Error',
+				message: error ? error?.message : defaultMessage,
+				data: requestBody,
+				url: originalURL,
+			});
+
+			return {
+				status: httpStatus.INTERNAL_SERVER_ERROR,
+				data: error?.message ?? defaultMessage,
+			};
+		}
+	}
+
+	throw new Error('Request Details Missing.');
 };
 
-/**
- * Get Data From Current API
- * @param {IRequestToCurrentAPI}
- * @returns {Promise<any>}
- */
-const getService = async ({
-	apiPoolName,
-	requestBody,
-	originalURL,
-}: IRequestToCurrentAPI): Promise<AxiosResponse<any, any>> => {
-	const targetURL = await getTargetURL(apiPoolName, originalURL);
-
-	logger.info(`Making GET Request To ${targetURL}`);
-
-	const getResponse = await axios.get(targetURL, requestBody);
-
-	return getResponse;
-};
-
-/**
- * Update Data Through Current API
- * @param {IRequestToCurrentAPI}
- * @returns {Promise<any>}
- */
-const updateService = async ({
-	apiPoolName,
-	requestBody,
-	originalURL,
-}: IRequestToCurrentAPI): Promise<AxiosResponse<any, any>> => {
-	const targetURL = await getTargetURL(apiPoolName, originalURL);
-
-	logger.info(`Making PUT Request To ${targetURL}`);
-
-	return await axios.put(targetURL, requestBody);
-};
-
-/**
- * Delete Data With Current API
- * @param {IRequestToCurrentAPI}
- * @returns {Promise<any>}
- */
-const deleteService = async ({
-	apiPoolName,
-	requestBody,
-	originalURL,
-}: IRequestToCurrentAPI): Promise<AxiosResponse<any, any>> => {
-	const targetURL = await getTargetURL(apiPoolName, originalURL);
-
-	logger.info(`Making DELETE Request To ${targetURL}`);
-
-	return await axios.delete(targetURL, requestBody);
-};
-
-export const centralServices: {
-	[keys in RequestMethod]: ({
-		apiPoolName,
-		requestBody,
-	}: IRequestToCurrentAPI) => Promise<AxiosResponse<any, any>>;
-} = {
-	POST: postService,
-	GET: getService,
-	PUT: updateService,
-	DELETE: deleteService,
-};
-
-export default centralServices;
+export default requestMethodToTargetURL;

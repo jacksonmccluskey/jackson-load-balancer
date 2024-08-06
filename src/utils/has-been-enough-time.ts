@@ -1,9 +1,12 @@
-export const getLastTime = (url: any) => {
-	return url.lastTime;
+// Copyright © 2024 Jackson McCluskey
+// GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
+
+export const getLastTime = (apiPool: any) => {
+	return apiPool.lastUpdate;
 };
 
-export const getEnoughTime = (url: any) => {
-	return url.enoughTime;
+export const getEnoughTime = (apiPool: any) => {
+	return apiPool.enoughTime;
 };
 
 export const hasBeenEnoughTime = (url: any) => {
