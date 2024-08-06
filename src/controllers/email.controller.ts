@@ -29,11 +29,7 @@ const sendEmail = catchAsync(async (req: Request, res: Response) => {
 	const email = constructEmail(req?.body);
 
 	try {
-		const emailResponse = await services.emailService.sendEmail(
-			email.to,
-			email.subject,
-			email.text
-		);
+		await services.emailService.sendEmail(email.to, email.subject, email.text);
 
 		res.status(httpStatus.OK).send();
 	} catch {
