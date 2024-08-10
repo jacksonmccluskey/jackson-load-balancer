@@ -46,7 +46,7 @@ export const errorHandler = (
 	};
 
 	if (config.env === 'DEVELOPMENT') {
-		logger.error(err);
+		logger.info(err);
 	}
 
 	res.status(statusCode).send(response);

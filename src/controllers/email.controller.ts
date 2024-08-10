@@ -5,6 +5,7 @@ import logger from '../config/logger';
 import httpStatus from 'http-status';
 import logController from './log.controller';
 import { emojiSelector } from '../utils/emoji-selector';
+import emailService from '../services/email.service';
 
 const constructEmail = (requestBody: any) => {
 	if (!requestBody) {
@@ -29,9 +30,19 @@ const sendEmail = catchAsync(async (req: Request, res: Response) => {
 	const email = constructEmail(req?.body);
 
 	try {
-		await services.emailService.sendEmail(email.to, email.subject, email.text);
+		if (emailService.sendEmail) {
+			await services.emailService.sendEmail({
+				to: email.to,
+				subject: email.subject,
+				text: email.text,
+			});
 
-		res.status(httpStatus.OK).send();
+			res.status(httpStatus.OK).send();
+		} else {
+			res
+				.status(httpStatus.INTERNAL_SERVER_ERROR)
+				.send('Email Sender Is Unavailable');
+		}
 	} catch {
 		await logController.logAnything({
 			status: 'ERROR',

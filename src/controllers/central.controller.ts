@@ -7,6 +7,83 @@ import services from '../services';
 import { Request, Response } from 'express';
 import { IRequestToCurrentAPI } from '../services/central.service';
 import httpStatus from 'http-status';
+import logger from '../config/logger';
+
+const handleAPIPoolRequest = async (
+	requestInfo: IRequestToCurrentAPI,
+	res: Response
+) => {
+	try {
+		switch (requestInfo.requestMethod) {
+			case 'GET': {
+				const apiPool = await services.centralService.getAPIPool();
+
+				if (!apiPool) {
+					res
+						.status(httpStatus.INTERNAL_SERVER_ERROR)
+						.send('Could Not Get API Pool');
+					return;
+				}
+
+				res.status(httpStatus.OK).send(apiPool);
+
+				return;
+			}
+			case 'DELETE': {
+				const removeURL = requestInfo.requestBody.url;
+
+				if (typeof removeURL != 'string') {
+					throw new Error('Invalid URL To Remove');
+				}
+
+				const apiURLs = await services.centralService.removeURLFromAPIPool(
+					removeURL
+				);
+
+				res.status(httpStatus.OK).send(apiURLs);
+
+				return;
+			}
+			case 'POST': {
+				const addURL = requestInfo.requestBody.url;
+
+				if (typeof addURL != 'string') {
+					throw new Error('Invalid New URL To Add');
+				}
+
+				const apiURLs = await services.centralService.addURLToAPIPool(addURL);
+
+				res.status(httpStatus.OK).send(apiURLs);
+
+				return;
+			}
+			case 'PUT': {
+				const newURLs = requestInfo.requestBody.urls;
+
+				if (!Array.isArray(newURLs)) {
+					throw new Error('Invalid New URLs To Replace');
+				}
+
+				const apiURLs = await services.centralService.replaceURLsFromAPIPool(
+					newURLs
+				);
+
+				res.status(httpStatus.OK).send(apiURLs);
+
+				return;
+			}
+			default: {
+				throw new Error('Invalid Request');
+			}
+		}
+	} catch (error) {
+		res
+			.status(httpStatus.INTERNAL_SERVER_ERROR)
+			.send(`Unable To Reach API Pool: ${error.message}`);
+
+		return;
+	}
+};
 
 const destructureRequestInfo = (req: Request): IRequestToCurrentAPI => {
 	const getRequestMethod = () => {
@@ -29,22 +106,26 @@ const controller = catchAsync(async (req: Request, res: Response) => {
 		const requestInfo = destructureRequestInfo(req);
 
 		if (requestInfo.originalURL.includes('jackson-health-check')) {
-			res.status(200).send('Jackson Is Very Healthy 🍎');
-
-			return;
+			return res.status(200).send('Jackson Is Very Healthy 🍎');
 		}
 
-		const apiResponse = await services.centralService(requestInfo);
+		if (requestInfo.originalURL.includes('jackson-api-pool')) {
+			return await handleAPIPoolRequest(requestInfo, res);
+		}
+
+		const apiResponse = await services.centralService.requestMethodToTargetURL(
+			requestInfo
+		);
 
 		const status = apiResponse?.status || httpStatus.INTERNAL_SERVER_ERROR;
 		const headers = apiResponse?.headers || {};
 		const data = apiResponse?.data;
 
-		res.status(status).set(headers).send(data);
-
-		return;
+		return res.status(status).set(headers).send(data);
 	} catch (error) {
-		res
+		await logger.logAnything({});
+
+		return res
 			.status(httpStatus.INTERNAL_SERVER_ERROR)
 			.send(error?.message ? error.message : 'Load Balancer Failure');
 	}

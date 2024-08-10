@@ -4,6 +4,7 @@ import tokenService from './token.service';
 import userService from './user.service';
 import centralService from './central.service';
 import logService from './log.service';
+import redisService from './redis.service';
 
 export default {
 	authService,
@@ -12,4 +13,5 @@ export default {
 	userService,
 	centralService,
 	logService,
+	redisService,
 };

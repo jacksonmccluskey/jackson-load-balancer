@@ -4,25 +4,128 @@
 import axios from 'axios';
 import httpStatus from 'http-status';
 import config from '../config/config';
+import logger from '../config/logger';
 import logController from '../controllers/log.controller';
 import { RequestMethod } from '../routes/v1/central.route';
+import redisService from './redis.service';
 
-const apiPool = {
-	urls: config.initialAPIPoolURLS.split(',').map((url: string) => {
-		return {
-			url: url,
-			isHealthy: false,
-		};
-	}),
+export interface IURLInAPIPool {
+	url: string;
+}
+
+export interface IAPIPool {
+	urls: IURLInAPIPool[];
+	currentURLIndex: number;
+}
+
+const defaultAPIPool: IAPIPool = {
+	urls:
+		config.initialAPIPoolURLS?.split(',').map((url: string) => {
+			return {
+				url: url.trim(),
+			};
+		}) ?? [],
 	currentURLIndex: 0,
 };
 
-const cleanupURL = (url?: string) => {
-	if (url && typeof url == 'string') {
-		return url.charAt(url.length - 1) == '/'
-			? url.substring(0, url.length - 1)
-			: url;
+/**
+ * Initializes The API Pool In Redis To The Default API Pool Defined With Environment Variables
+ * @returns {Promise<void>}
+ */
+const initializeAPIPoolInRedis = async () => {
+	try {
+		const apiPoolInRedis = await redisService.getAPIPoolFromRedis();
+
+		if (!apiPoolInRedis) await redisService.setAPIPoolInRedis(defaultAPIPool);
+	} catch {}
+};
+
+initializeAPIPoolInRedis();
+
+const something = 0;
+
+/**
+ * Returns Current API Pool From Redis, On Failure Returns null
+ * @returns {Promise<IAPIPool>}
+ */
+const getAPIPool = async (): Promise<IAPIPool | null> => {
+	try {
+		return await redisService.getAPIPoolFromRedis();
+	} catch {
+		return defaultAPIPool;
 	}
+};
+
+/**
+ * Adds URL In Arg To urls Array In Redis & Returns Updated URLs, On Failure Returns null And URL May Not Be Added To Redis
+ * @param {url}
+ * @returns {Promise<string[] | null>}
+ */
+const addURLToAPIPool = async (url: string): Promise<string[] | null> => {
+	try {
+		return await redisService.addURLToAPIPoolInRedis(url);
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * Removes URL In Arg From urls Array In Redis & Returns Updated URLs, On Failure Returns null And URL May Not Be Removed From Redis
+ * @param {url}
+ * @returns {Promise<string[] | null>}
+ */
+const removeURLFromAPIPool = async (url: string): Promise<string[] | null> => {
+	try {
+		return await redisService.removeURLFromAPIPoolInRedis(url);
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * Replaces All URLs In urls Array In Redis With URLs In Arg & Returns Updated URLs, On Failure Returns null And URLs May Not Be Replaced In Redis
+ * @param {urls}
+ * @returns {Promise<string[] | null>}
+ */
+const replaceURLsFromAPIPool = async (
+	urls: string[]
+): Promise<string[] | null> => {
+	try {
+		return await redisService.replaceURLsFromAPIPoolInRedis(urls);
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * Returns All URLs In urls Array In Redis, On Failure Returns null
+ * @param urls
+ * @returns {Promise<string[] | null>}
+ */
+const getAPIPoolURLs = async (): Promise<string[] | null> => {
+	try {
+		return await redisService.getURLsFromAPIPoolInRedis();
+	} catch {}
+
+	return null;
+};
+
+/**
+ * Returns Index Of Current URL From Redis, On Failure Returns 0
+ * @param {urls}
+ * @returns {Promise<number>}
+ */
+const getCurrentURLIndex = async (): Promise<number> => {
+	try {
+		return await redisService.getCurrentURLIndexFromAPIPoolInRedis();
+	} catch {
+		return 0;
+	}
+};
+
+const cleanupURL = (url?: string) => {
+	if (url && typeof url == 'string')
+		return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
 };
 
 /**
@@ -62,36 +165,31 @@ const getCurrentURL = async ({
 	urlIndex,
 	attempts = 0,
 }: IGetCurrentURL): Promise<string> => {
-	if (attempts >= urls?.length) {
+	if (!urls?.length || attempts >= urls.length) {
 		throw new Error(
 			`None Of The APIs In This API Pool Are Healthy: ${JSON.stringify(urls)}`
 		);
 	}
 
 	if (urlIndex >= urls?.length) {
-		throw new Error(
-			'Current URL Index Out Of Bounds. Manual Data Intervention Is Required.'
-		);
+		urlIndex = 0;
 	}
 
 	const currentURL = urls[urlIndex];
 
 	const nextCurrentURLIndex = urlIndex >= urls.length - 1 ? 0 : urlIndex + 1;
 
+	const url = currentURL.url;
+
 	try {
-		const isAPIHealthy = await checkAPIHealth(currentURL.url);
+		const isAPIHealthy = await checkAPIHealth(url);
 
 		if (!isAPIHealthy) {
 			throw new Error('Current API Is Not Healthy');
 		}
 
-		apiPool.urls[urlIndex].isHealthy = true;
-		apiPool.currentURLIndex = nextCurrentURLIndex;
-
-		return currentURL.url;
+		return url;
 	} catch {
-		apiPool.urls[urlIndex].isHealthy = false;
-
 		return getCurrentURL({
 			urls,
 			urlIndex: nextCurrentURLIndex,
@@ -101,11 +199,16 @@ const getCurrentURL = async ({
 };
 
 const getTargetURL = async (originalURL?: string): Promise<string> => {
-	const { urls, currentURLIndex } = apiPool;
+	const { urls, currentURLIndex } =
+		await redisService.getValuesFromAPIPoolInRedis();
 
-	const currentURL = await getCurrentURL({ urls, urlIndex: currentURLIndex });
+	const currentURL = await getCurrentURL({
+		urls,
+		urlIndex: currentURLIndex,
+	});
 
-	if (currentURL) return `${cleanupURL(currentURL)}${originalURL}`;
+	if (typeof currentURL == 'string')
+		return `${cleanupURL(currentURL)}${originalURL}`;
 
 	throw new Error('There Is No Available URL.');
 };
@@ -127,16 +230,16 @@ const requestMethodToTargetURL = async ({
 	originalURL,
 }: IRequestToCurrentAPI): Promise<any> => {
 	if (requestMethod && originalURL) {
-		try {
-			const targetURL = await getTargetURL(originalURL);
+		let targetURL: string | undefined;
 
-			return await axios[requestMethod.toLowerCase()](targetURL, requestBody);
-		} catch (error: any) {
-			const defaultMessage = 'Unknown Error Getting URL & Making Request';
+		try {
+			targetURL = await getTargetURL(originalURL);
+		} catch (error) {
+			const defaultMessage = `Error Getting Target URL: ${targetURL}`;
 
 			await logController.logAnything({
 				status: 'ERROR',
-				title: 'Load Balancer Error',
+				title: 'Error Making Request From Load Balancer',
 				message: error ? error?.message : defaultMessage,
 				data: requestBody,
 				url: originalURL,
@@ -147,9 +250,24 @@ const requestMethodToTargetURL = async ({
 				data: error?.message ?? defaultMessage,
 			};
 		}
+
+		if (!targetURL) {
+			throw new Error('No Target URL Found');
+		}
+
+		return await axios[requestMethod.toLowerCase()](targetURL, requestBody);
 	}
 
 	throw new Error('Request Details Missing.');
 };
 
-export default requestMethodToTargetURL;
+export default {
+	requestMethodToTargetURL,
+	getAPIPool,
+	getCurrentURLIndex,
+	getAPIPoolURLs,
+	addURLToAPIPool,
+	removeURLFromAPIPool,
+	replaceURLsFromAPIPool,
+	checkAPIHealth,
+};

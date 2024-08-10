@@ -5,8 +5,8 @@ import * as http from 'http';
 import mongoose from 'mongoose';
 import app from './app';
 import config from './config/config';
-import logger from './config/logger';
 import logController from './controllers/log.controller';
+import { sendEmailForEvent } from './utils/send-email-for-event';
 
 let server: http.Server | undefined;
 
@@ -37,6 +37,14 @@ const connectToMongoAndRunServer = async () => {
 		});
 
 		server = app.listen(config.port, async () => {
+			try {
+				await sendEmailForEvent('MONGO_DISCONNECTED', {
+					to: config.email.to,
+					subject: 'MongoDB Disconnected',
+					text: `Unable To Connect To MongoDB. Listening On Port ${config.port} Without MongoDB`,
+				});
+			} catch {}
+
 			await logController.logAnything({
 				status: 'SUCCESS',
 				title: `App Listening`,

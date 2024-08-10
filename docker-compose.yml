@@ -1,28 +1,55 @@
-version: '3'
+version: '3.8'
 
 services:
-  jackson-load-balancer:
-    build: . # Build Load Balancer Docker Image From Current Directory
+  mongo:
+    image: mongo:latest
+    container_name: mongo
     ports:
-      - '5555:5555' # Expose Port 5555 For HTTP Requests
-    depends_on:
-      - mongodb
+      - '4444:27017'
     volumes:
-      - .:/usr/src/jackson-load-balancer
-    environment:
-      - .env # Reference .env File For Environment Variables
+      - /mnt/mongo:/data/db
     networks:
       - jackson-network
 
-  mongodb:
-    image: mongo:latest
-    ports: '27017:27017'
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - '6666:6379'
     volumes:
-      - mongodb-data:/data/db # Persist MongoDB Data
+      - /mnt/redis:/data
+    networks:
+      - jackson-network
+
+  app:
+    build: .
+    container_name: jackson-load-balancer
+    ports:
+      - '5555:5555'
+    environment:
+      - NODE_ENV=PRODUCTION
+      - PORT=5555
+      - MONGODB_URL=mongodb://127.0.0.1:4444/jackson-load-balancer
+      - JWT_SECRET=SUPERSECRETJWT
+      - JWT_ACCESS_EXPIRATION_MINUTES=5
+      - JWT_REFRESH_EXPIRATION_DAYS=365
+      - JWT_RESET_PASSWORD_EXPIRATION_MINUTES=5
+      - JWT_VERIFY_EMAIL_EXPIRATION_MINUTES=5
+      - SMTP_HOST=email.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=user@email.com
+      - SMTP_PASSWORD=supersecretsmtppassword
+      - EMAIL_FROM=user@email.com
+      - EMAIL_TO=otheruser@otheremail.com
+      - INITIAL_API_POOL_URLS=https://api1.somedomain.com,https://api2.somedomain.com,https://api3.somedomain.com
+      - INITIAL_API_HEALTH_CHECK_ROUTE=/health/check/route
+      - HEALTH_CHECK_ENOUGH_TIME=60000
+      - LOG_FILE_DIRECTORY_NAME=/log/file/directory/name
+    volumes:
+      - /mnt/jackson:/app/logs
     networks:
       - jackson-network
 
 networks:
-  jackson-network: # Custom Network For Container Communication
+  jackson-network:
     driver: bridge
-    external: true # Allow External Access

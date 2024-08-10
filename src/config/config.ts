@@ -4,8 +4,6 @@ import Joi from 'joi';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-console.log(process.env.NODE_ENV);
-
 const envVarsSchema = Joi.object()
 	.keys({
 		NODE_ENV: Joi.string()
@@ -31,15 +29,12 @@ const envVarsSchema = Joi.object()
 		SMTP_USERNAME: Joi.string().description('Email Server Username'),
 		SMTP_PASSWORD: Joi.string().description('Email Server Password'),
 		EMAIL_FROM: Joi.string().description('Email Sender Name'),
-		API_POOLS_COLLECTION_NAME: Joi.string().description(
-			'Name Of MongoDB Collection With API Pools For Load Balancing'
+		EMAIL_TO: Joi.string().description(
+			'Destination For Sending Notification Emails'
 		),
-		INITIAL_API_POOL_NAME: Joi.string()
-			.description('Name Of Initial Document Containing Initial API Pool')
-			.default('initial'),
 		INITIAL_API_POOL_URLS: Joi.string()
 			.description('Comma Separated List Of Initial URLs For Initial API Pool')
-			.default([]),
+			.default(''),
 		HEALTH_CHECK_ENOUGH_TIME: Joi.number()
 			.description('Minimum Time Interval Between Health Checks')
 			.default(0),
@@ -99,9 +94,8 @@ export default {
 			},
 		},
 		from: envVars.EMAIL_FROM,
+		to: envVars.EMAIL_TO,
 	},
-	apiPoolCollectionName: envVars.API_POOL_COLLECTION_NAME,
-	initialAPIPoolName: envVars.INITIAL_API_POOL_NAME,
 	initialAPIPoolURLS: envVars.INITIAL_API_POOL_URLS,
 	healthCheckEnoughTime: envVars.HEALTH_CHECK_ENOUGH_TIME,
 	initialAPIHealthCheckRoute: envVars.INITIAL_API_HEALTH_CHECK_ROUTE,

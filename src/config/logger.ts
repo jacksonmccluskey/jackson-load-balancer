@@ -1,8 +1,8 @@
 import winston from 'winston';
 import config from './config';
 
-const defaultLogFunction = async (args: any) => {
-	args ? console.log(JSON.stringify(args)) : 'Logger Undefined';
+const defaultLogFunction = async (_args: any) => {
+	return;
 };
 
 let logger: any = {

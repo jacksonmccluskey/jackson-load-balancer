@@ -5,6 +5,7 @@ import { emojiSelector, Event } from '../utils/emoji-selector';
 import pick from '../utils/pick';
 import logger from '../config/logger';
 import httpStatus from 'http-status';
+import mongoose from 'mongoose';
 
 interface ILog {
 	date: Date | string;
@@ -40,7 +41,7 @@ const writeLog = catchAsync(async (req: Request, res: Response) => {
 
 		res.status(httpStatus.OK).send(writtenLog);
 	} catch {
-		logger.error(JSON.stringify(log));
+		logger.info(JSON.stringify(log));
 
 		res
 			.status(httpStatus.INTERNAL_SERVER_ERROR)
@@ -53,24 +54,19 @@ const getLogs = catchAsync(async (req: Request, res: Response) => {
 		const filter = pick(req.query, ['emoji', 'status', 'title', 'message']);
 		const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
-		console.log(`filter: ${JSON.stringify(filter)}`);
-		console.log(`options: ${JSON.stringify(options)}`);
-
 		if (req.query.title) {
 			filter.title = { $regex: req.query.title, $options: 'i' };
-			console.log(`title: ${JSON.stringify(filter.title)}`);
 		}
 
 		if (req.query.message) {
 			filter.message = { $regex: req.query.message, $options: 'i' };
-			console.log(`message: ${JSON.stringify(filter.message)}`);
 		}
 
 		const apiResponse = await services.logService.queryLogs(filter, options);
 
 		res.status(httpStatus.OK).send(apiResponse.results);
 	} catch {
-		logger.error('Unable To Get Logs');
+		logger.info('Unable To Get Logs');
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).send('Unable To Get Logs');
 	}
@@ -82,10 +78,16 @@ const logAnything = async (logContent: ILogAnything) => {
 	const log = constructLog(logContent);
 
 	try {
-		await services.logService.writeLog(log);
-	} catch {
-		logger.error(JSON.stringify(log));
-	}
+		if (
+			mongoose.connection.readyState == 1 ||
+			mongoose.connection.readyState == 2
+		) {
+			await services.logService.writeLog(log);
+			return;
+		}
+	} catch {}
+
+	await logger.info(JSON.stringify(log));
 };
 
 export default {

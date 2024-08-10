@@ -14,11 +14,11 @@ const router = express.Router();
 
 const defaultRoutes = [
 	{
-		path: '/auth',
+		path: '/jackson/auth',
 		route: authRoute,
 	},
 	{
-		path: '/users',
+		path: '/jackson/users',
 		route: userRoute,
 	},
 	{
@@ -26,15 +26,18 @@ const defaultRoutes = [
 		route: centralRoute,
 	},
 	{
-		path: '/log',
+		path: '/jackson/log',
 		route: logRoute,
 	},
-	{ path: '/email', route: emailRoute },
+	{
+		path: '/jackson/email',
+		route: emailRoute,
+	},
 ];
 
 const devRoutes = [
 	{
-		path: '/docs',
+		path: '/jackson/docs',
 		route: docsRoute,
 	},
 ];
