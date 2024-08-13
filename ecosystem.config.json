@@ -2,13 +2,13 @@
 	"apps": [
 		{
 			"name": "jackson-load-balancer",
-			"script": "src/index.js",
+			"script": "src/index.ts",
 			"instances": 1,
 			"autorestart": true,
 			"watch": false,
 			"time": true,
 			"env": {
-				"NODE_ENV": "DEVELOPMENT"
+				"NODE_ENV": "PRODUCTION"
 			}
 		}
 	]

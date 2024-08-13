@@ -11,6 +11,14 @@ const envVarsSchema = Joi.object()
 			.required(),
 		PORT: Joi.number().default(5555),
 		MONGODB_URL: Joi.string().required().description('MongoDB URL'),
+		REDIS_HOST: Joi.string()
+			.required()
+			.description('Redis Host URL')
+			.default('redis'),
+		REDIS_PORT: Joi.number()
+			.required()
+			.description('Redis Host Port')
+			.default(6379),
 		JWT_SECRET: Joi.string().required().description('JWT Secret Key'),
 		JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
 			.default(30)
@@ -35,9 +43,6 @@ const envVarsSchema = Joi.object()
 		INITIAL_API_POOL_URLS: Joi.string()
 			.description('Comma Separated List Of Initial URLs For Initial API Pool')
 			.default(''),
-		HEALTH_CHECK_ENOUGH_TIME: Joi.number()
-			.description('Minimum Time Interval Between Health Checks')
-			.default(0),
 		INITIAL_API_HEALTH_CHECK_ROUTE: Joi.string().description(
 			'Route For Conducting Health Checks On API With GET Request'
 		),
@@ -76,6 +81,10 @@ export default {
 			useUnifiedTopology: true,
 		},
 	},
+	redis: {
+		host: envVars.REDIS_HOST,
+		port: envVars.REDIS_PORT,
+	},
 	jwt: {
 		secret: envVars.JWT_SECRET,
 		accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
@@ -97,7 +106,6 @@ export default {
 		to: envVars.EMAIL_TO,
 	},
 	initialAPIPoolURLS: envVars.INITIAL_API_POOL_URLS,
-	healthCheckEnoughTime: envVars.HEALTH_CHECK_ENOUGH_TIME,
 	initialAPIHealthCheckRoute: envVars.INITIAL_API_HEALTH_CHECK_ROUTE,
 	cloudwatchLogsLogGroupName: envVars.CLOUDWATCH_LOGS_LOG_GROUP_NAME,
 	cloudwatchLogsAWSRegion: envVars.CLOUDWATCH_LOGS_AWS_REGION,

@@ -7,7 +7,7 @@ let transport: any;
 try {
 	transport = nodemailer.createTransport(config.email.smtp);
 	/* istanbul ignore next */
-	if (config.env !== 'test') {
+	if (config.env !== 'TESTING') {
 		transport
 			.verify()
 			.then(

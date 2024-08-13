@@ -4,7 +4,6 @@
 import axios from 'axios';
 import httpStatus from 'http-status';
 import config from '../config/config';
-import logger from '../config/logger';
 import logController from '../controllers/log.controller';
 import { RequestMethod } from '../routes/v1/central.route';
 import redisService from './redis.service';

@@ -5,7 +5,10 @@ import config from '../config/config';
 import { sendEmailForEvent } from '../utils/send-email-for-event';
 import { IAPIPool, IURLInAPIPool } from './central.service';
 
-let redis = new Redis({ host: '127.0.0.1', port: 6379 });
+let redis = new Redis({
+	host: config.redis.host,
+	port: config.redis.port,
+});
 
 redis.on('error', async (err) => {
 	try {
