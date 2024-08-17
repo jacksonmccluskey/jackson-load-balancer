@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import app from './app';
 import config from './config/config';
 import logController from './controllers/log.controller';
+import { sendEmail } from './services/email.service';
 import { sendEmailForEvent } from './utils/send-email-for-event';
 
 let server: http.Server | undefined;
@@ -37,18 +38,10 @@ const connectToMongoAndRunServer = async () => {
 		});
 
 		server = app.listen(config.port, async () => {
-			try {
-				await sendEmailForEvent('MONGO_DISCONNECTED', {
-					to: config.email.to,
-					subject: 'MongoDB Disconnected',
-					text: `Unable To Connect To MongoDB. Listening On Port ${config.port} Without MongoDB`,
-				});
-			} catch {}
-
-			await logController.logAnything({
-				status: 'SUCCESS',
-				title: `App Listening`,
-				message: `Listening On Port ${config.port} Without MongoDB`,
+			await sendEmailForEvent('MONGO_DISCONNECTED', {
+				to: config.email.to,
+				subject: 'MongoDB Disconnected',
+				text: `Unable To Connect To MongoDB. Listening On Port ${config.port} Without MongoDB`,
 			});
 		});
 	}
@@ -63,6 +56,12 @@ const exitHandler = () => {
 				status: 'TERMINATED',
 				title: 'Server Closing...',
 				message: error ? JSON.stringify(error) : 'Unknown Error',
+			});
+
+			await sendEmail({
+				to: config.email.to,
+				subject: `${config.host} Server Closing...`,
+				text: error ? JSON.stringify(error) : 'Unknown Error',
 			});
 
 			process.exit(1);

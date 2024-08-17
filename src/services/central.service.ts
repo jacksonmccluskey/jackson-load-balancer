@@ -2,6 +2,7 @@
 // GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
 
 import axios from 'axios';
+import { Request } from 'express';
 import httpStatus from 'http-status';
 import config from '../config/config';
 import logController from '../controllers/log.controller';
@@ -216,6 +217,8 @@ export interface IRequestToCurrentAPI {
 	requestMethod?: RequestMethod;
 	requestBody?: any;
 	originalURL?: string;
+	headers?: any;
+	requestQuery?: any;
 }
 
 /**
@@ -223,16 +226,12 @@ export interface IRequestToCurrentAPI {
  * @param {IRequestToCurrentAPI}
  * @returns {Promise<any>}
  */
-const requestMethodToTargetURL = async ({
-	requestMethod,
-	requestBody,
-	originalURL,
-}: IRequestToCurrentAPI): Promise<any> => {
-	if (requestMethod && originalURL) {
+const requestMethodToTargetURL = async (req: Request): Promise<any> => {
+	if (req.method && req.originalUrl) {
 		let targetURL: string | undefined;
 
 		try {
-			targetURL = await getTargetURL(originalURL);
+			targetURL = await getTargetURL(req.originalUrl);
 		} catch (error) {
 			const defaultMessage = `Error Getting Target URL: ${targetURL}`;
 
@@ -240,8 +239,8 @@ const requestMethodToTargetURL = async ({
 				status: 'ERROR',
 				title: 'Error Making Request From Load Balancer',
 				message: error ? error?.message : defaultMessage,
-				data: requestBody,
-				url: originalURL,
+				data: req.body,
+				url: req.originalUrl,
 			});
 
 			return {
@@ -254,7 +253,7 @@ const requestMethodToTargetURL = async ({
 			throw new Error('No Target URL Found');
 		}
 
-		return await axios[requestMethod.toLowerCase()](targetURL, requestBody);
+		return await axios[req.method.toLowerCase()](targetURL, req.body);
 	}
 
 	throw new Error('Request Details Missing.');

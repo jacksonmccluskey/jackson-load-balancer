@@ -1,28 +1,27 @@
 import services from '../services';
 import { Request, Response } from 'express';
 import catchAsync from '../utils/catch-async';
-import logger from '../config/logger';
 import httpStatus from 'http-status';
 import logController from './log.controller';
 import { emojiSelector } from '../utils/emoji-selector';
 import emailService from '../services/email.service';
+import config from '../config/config';
 
 const constructEmail = (requestBody: any) => {
 	if (!requestBody) {
 		throw new Error('No Request Body');
 	}
 
-	const date = requestBody.date ?? new Date();
 	const status = requestBody.status ?? 'ERROR';
 	const emoji = requestBody.emoji ?? emojiSelector[status];
-	const subject = requestBody.subject ?? 'From Jackson Load Balancer';
+	const subject = requestBody.title ?? 'From Jackson Load Balancer';
 	const text = requestBody.text ?? subject;
 	const data = requestBody.data;
 
 	return {
 		to: requestBody.to,
-		subject: `${emoji} ${requestBody.subject}`,
-		text: `${date}\n\n${text}${data ? `\n\n${JSON.stringify(data)}` : ''}`,
+		subject: `${emoji} ${subject}`,
+		text: `${text}${data ? `\n\n${JSON.stringify(data)}` : ''}`,
 	};
 };
 
@@ -31,13 +30,14 @@ const sendEmail = catchAsync(async (req: Request, res: Response) => {
 
 	try {
 		if (emailService.sendEmail) {
+			const to = email.to ?? config.email.to;
 			await services.emailService.sendEmail({
-				to: email.to,
+				to,
 				subject: email.subject,
 				text: email.text,
 			});
 
-			res.status(httpStatus.OK).send();
+			res.status(httpStatus.OK).send(`Email sent to ${to}!`);
 		} else {
 			res
 				.status(httpStatus.INTERNAL_SERVER_ERROR)

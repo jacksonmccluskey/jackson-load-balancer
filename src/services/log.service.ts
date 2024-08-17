@@ -1,6 +1,7 @@
 // Copyright © 2024 Jackson McCluskey
 // GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
 
+import mongoose from 'mongoose';
 import logger from '../config/logger';
 import models from '../models';
 
@@ -11,10 +12,13 @@ import models from '../models';
  */
 export const writeLog = async (log: any) => {
 	try {
-		await models.Log.create(log);
-	} catch {
-		await logger.info(JSON.stringify(log));
-	}
+		if (mongoose.connection.readyState == 1) {
+			await models.Log.create(log);
+			return;
+		}
+	} catch {}
+
+	await logger(JSON.stringify(log));
 };
 
 /**

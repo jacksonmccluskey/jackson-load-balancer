@@ -5,7 +5,9 @@ export const sendEmailForEvent = async (
 	event: EventCategory,
 	sendEmailArgs: ISendEmail
 ) => {
-	if (hasBeenEnoughTime(event)) {
-		await sendEmail(sendEmailArgs);
-	}
+	try {
+		if (hasBeenEnoughTime(event)) {
+			await sendEmail(sendEmailArgs);
+		}
+	} catch {}
 };

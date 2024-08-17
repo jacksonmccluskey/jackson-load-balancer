@@ -41,7 +41,7 @@ const writeLog = catchAsync(async (req: Request, res: Response) => {
 
 		res.status(httpStatus.OK).send(writtenLog);
 	} catch {
-		logger.info(JSON.stringify(log));
+		await JSON.stringify(log);
 
 		res
 			.status(httpStatus.INTERNAL_SERVER_ERROR)
@@ -66,7 +66,7 @@ const getLogs = catchAsync(async (req: Request, res: Response) => {
 
 		res.status(httpStatus.OK).send(apiResponse.results);
 	} catch {
-		logger.info('Unable To Get Logs');
+		await logger('Unable To Get Logs');
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).send('Unable To Get Logs');
 	}
@@ -78,16 +78,11 @@ const logAnything = async (logContent: ILogAnything) => {
 	const log = constructLog(logContent);
 
 	try {
-		if (
-			mongoose.connection.readyState == 1 ||
-			mongoose.connection.readyState == 2
-		) {
-			await services.logService.writeLog(log);
-			return;
-		}
-	} catch {}
-
-	await logger.info(JSON.stringify(log));
+		await services.logService.writeLog(log);
+		return;
+	} catch {
+		await logger(JSON.stringify(log));
+	}
 };
 
 export default {

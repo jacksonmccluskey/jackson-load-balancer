@@ -1,20 +1,15 @@
 // Copyright © 2024 Jackson McCluskey
 // GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
 
-import { RequestMethod } from '../routes/v1/central.route';
 import catchAsync from '../utils/catch-async';
 import services from '../services';
 import { Request, Response } from 'express';
-import { IRequestToCurrentAPI } from '../services/central.service';
 import httpStatus from 'http-status';
-import logger from '../config/logger';
+import logController from './log.controller';
 
-const handleAPIPoolRequest = async (
-	requestInfo: IRequestToCurrentAPI,
-	res: Response
-) => {
+const handleAPIPoolRequest = async (req: Request, res: Response) => {
 	try {
-		switch (requestInfo.requestMethod) {
+		switch (req.method.toUpperCase()) {
 			case 'GET': {
 				const apiPool = await services.centralService.getAPIPool();
 
@@ -30,7 +25,7 @@ const handleAPIPoolRequest = async (
 				return;
 			}
 			case 'DELETE': {
-				const removeURL = requestInfo.requestBody.url;
+				const removeURL = req.body.url;
 
 				if (typeof removeURL != 'string') {
 					throw new Error('Invalid URL To Remove');
@@ -45,7 +40,7 @@ const handleAPIPoolRequest = async (
 				return;
 			}
 			case 'POST': {
-				const addURL = requestInfo.requestBody.url;
+				const addURL = req.body.url;
 
 				if (typeof addURL != 'string') {
 					throw new Error('Invalid New URL To Add');
@@ -58,7 +53,7 @@ const handleAPIPoolRequest = async (
 				return;
 			}
 			case 'PUT': {
-				const newURLs = requestInfo.requestBody.urls;
+				const newURLs = req.body.urls;
 
 				if (!Array.isArray(newURLs)) {
 					throw new Error('Invalid New URLs To Replace');
@@ -85,45 +80,32 @@ const handleAPIPoolRequest = async (
 	}
 };
 
-const destructureRequestInfo = (req: Request): IRequestToCurrentAPI => {
-	const getRequestMethod = () => {
-		if (['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
-			return req.method as RequestMethod;
-		}
-
-		throw new Error('The Given Request Method Is Not Supported');
-	};
-
-	return {
-		requestBody: req.body,
-		originalURL: req.originalUrl,
-		requestMethod: getRequestMethod(),
-	};
-};
-
 const controller = catchAsync(async (req: Request, res: Response) => {
 	try {
-		const requestInfo = destructureRequestInfo(req);
-
-		if (requestInfo.originalURL.includes('jackson-health-check')) {
+		if (req.originalUrl.includes('jackson-health-check')) {
 			return res.status(200).send('Jackson Is Very Healthy 🍎');
 		}
 
-		if (requestInfo.originalURL.includes('jackson-api-pool')) {
-			return await handleAPIPoolRequest(requestInfo, res);
+		if (req.originalUrl.includes('jackson-api-pool')) {
+			return await handleAPIPoolRequest(req, res);
 		}
 
 		const apiResponse = await services.centralService.requestMethodToTargetURL(
-			requestInfo
+			req
 		);
 
 		const status = apiResponse?.status || httpStatus.INTERNAL_SERVER_ERROR;
-		const headers = apiResponse?.headers || {};
 		const data = apiResponse?.data;
 
-		return res.status(status).set(headers).send(data);
+		return res.status(status).send(data);
 	} catch (error) {
-		await logger.logAnything({});
+		await logController.logAnything({
+			status: 'ERROR',
+			title: 'Load Balancer Failure',
+			message: `Error: ${error?.message}`,
+			data: req.body ? req.body : undefined,
+			url: req.originalUrl ? req.originalUrl : undefined,
+		});
 
 		return res
 			.status(httpStatus.INTERNAL_SERVER_ERROR)

@@ -6,8 +6,8 @@ import Joi from 'joi';
 export const sendEmail = {
 	body: Joi.object().keys({
 		to: Joi.string().email(),
-		subject: Joi.string().required(),
-		text: Joi.string().optional(),
+		title: Joi.string().required(),
+		message: Joi.string().optional(),
 		data: Joi.object().optional(),
 		date: Joi.date().optional(),
 		emoji: Joi.string().optional(),

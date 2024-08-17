@@ -25,11 +25,11 @@ export const errorConverter = (
 };
 
 // eslint-disable-next-line no-unused-vars
-export const errorHandler = (
+export const errorHandler = async (
 	err: any,
 	_req: Request,
 	res: Response,
-	next: Function
+	_next: Function
 ) => {
 	let { statusCode, message } = err;
 	if (config.env === 'PRODUCTION' && !err.isOperational) {
@@ -46,7 +46,7 @@ export const errorHandler = (
 	};
 
 	if (config.env === 'DEVELOPMENT') {
-		logger.info(err);
+		await logger(err);
 	}
 
 	res.status(statusCode).send(response);

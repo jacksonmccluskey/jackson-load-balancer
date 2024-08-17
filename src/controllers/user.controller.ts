@@ -3,7 +3,6 @@ import pick from '../utils/pick';
 import ApiError from '../utils/api-error';
 import catchAsync from '../utils/catch-async';
 import services from '../services';
-import logger from '../config/logger';
 
 export const createUser = catchAsync(async (req, res) => {
 	const user = await services.userService.createUser(req.body);

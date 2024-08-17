@@ -6,6 +6,6 @@ export const authLimiter = rateLimit({
 		: 1 * 60 * 1000,
 	max: process.env.RATE_LIMITER_MAX
 		? parseInt(process.env.RATE_LIMITER_MAX)
-		: 60,
+		: 1000,
 	skipSuccessfulRequests: true,
 });

@@ -16,7 +16,7 @@ import { errorConverter, errorHandler } from './middlewares/error';
 
 const app = express();
 
-if (config.env !== 'test') {
+if (config.env !== 'PRODUCTION') {
 	app.use((req, res, callback) => morgan.successHandler(req, res, callback));
 	app.use((req, res, callback) => morgan.errorHandler(req, res, callback));
 }
