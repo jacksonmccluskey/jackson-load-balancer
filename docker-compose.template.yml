@@ -102,7 +102,7 @@ services:
       - 'YOUR_DESIRED_EXTERNAL_PORT:5555'
 
     # Don't change this unless you write a better package to run a Node.js service in TypeScript!
-    command: ['npx', 'ts-node', 'src/index.ts']
+    command: ['npm', 'run', 'start']
 
     # jackson-load-balancer will map to its current directory on your host machine. Logs will be written to the "/mnt/jackson" directory or any other volume you want. NOTE: Do not change /app/logs to anythings else unless you change the environment value for LOG_FILE_DIRECTORY_NAME.
     volumes:
