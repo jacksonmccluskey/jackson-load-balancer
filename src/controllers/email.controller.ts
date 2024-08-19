@@ -15,7 +15,7 @@ const constructEmail = (requestBody: any) => {
 	const status = requestBody.status ?? 'ERROR';
 	const emoji = requestBody.emoji ?? emojiSelector[status];
 	const subject = requestBody.title ?? 'From Jackson Load Balancer';
-	const text = requestBody.text ?? subject;
+	const text = requestBody.message ?? subject;
 	const data = requestBody.data;
 
 	return {
