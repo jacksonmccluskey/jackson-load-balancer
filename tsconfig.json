@@ -11,5 +11,6 @@
 		"resolveJsonModule": true
 	},
 	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "index.js"]
+	"exclude": ["node_modules", "index.js"],
+	"files": ["src/types/express.d.ts"]
 }
