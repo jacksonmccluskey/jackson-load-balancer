@@ -10,7 +10,7 @@
 		"node": ">=12.0.0"
 	},
 	"scripts": {
-		"build": "tsc --project ./",
+		"build": "npm install && tsc --project ./",
 		"start": "npm run build && node dist/src/index.js",
 		"dev": "npx ts-node index.ts"
 	},
