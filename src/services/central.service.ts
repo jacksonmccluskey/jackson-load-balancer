@@ -253,7 +253,9 @@ const requestMethodToTargetURL = async (req: Request): Promise<any> => {
 			throw new Error('No Target URL Found');
 		}
 
-		return await axios[req.method.toLowerCase()](targetURL, req.body);
+		return await axios[req.method.toLowerCase()](targetURL, req.body, {
+			headers: { Authorization: `Bearer ${config.centralBearerToken}` },
+		});
 	}
 
 	throw new Error('Request Details Missing.');

@@ -59,6 +59,9 @@ const envVarsSchema = Joi.object()
 		LOG_FILE_DIRECTORY_NAME: Joi.string().description(
 			'Location Of Backup Log Files'
 		),
+		CENTRAL_BEARER_TOKEN: Joi.string()
+			.description('Secret Token For Central API')
+			.required(),
 	})
 	.unknown();
 
@@ -112,4 +115,5 @@ export default {
 	cloudwatchLogsLogGroupName: envVars.CLOUDWATCH_LOGS_LOG_GROUP_NAME,
 	cloudwatchLogsAWSRegion: envVars.CLOUDWATCH_LOGS_AWS_REGION,
 	logFileDirectoryName: envVars.LOG_FILE_DIRECTORY_NAME,
+	centralBearerToken: envVars.CENTRAL_BEARER_TOKEN,
 };
