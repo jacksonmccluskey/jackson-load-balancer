@@ -199,3 +199,8 @@ Replace Entire API Pool
 ```
 $ curl http://localhost:5555/api/jackson-api-pool --request DELETE --data '{ "urls": [ "https://central1.pacificgyre.com", "https://central2.pacificgyre.com"] }'
 ```
+
+### In-Progress
+
+- Remove User & Auth + Build `jackson-user-manager`
+- Set Multiple API Pools
