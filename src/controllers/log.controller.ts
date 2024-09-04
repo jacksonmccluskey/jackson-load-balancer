@@ -5,7 +5,6 @@ import { emojiSelector, Event } from '../utils/emoji-selector';
 import pick from '../utils/pick';
 import logger from '../config/logger';
 import httpStatus from 'http-status';
-import mongoose from 'mongoose';
 
 interface ILog {
 	date: Date | string;
@@ -41,8 +40,6 @@ const writeLog = catchAsync(async (req: Request, res: Response) => {
 
 		res.status(httpStatus.OK).send(writtenLog);
 	} catch {
-		await JSON.stringify(log);
-
 		res
 			.status(httpStatus.INTERNAL_SERVER_ERROR)
 			.send('Unable To Write Log But Saved On Local Host.');

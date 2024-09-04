@@ -13,7 +13,17 @@ import models from '../models';
 export const writeLog = async (log: any) => {
 	try {
 		if (mongoose.connection.readyState == 1) {
-			await models.Log.create(log);
+			await models.Log.findOneAndUpdate(
+				{
+					status: log.status,
+					url: log.url,
+					message: log.message,
+					data: log.data,
+				},
+				{ $setOnInsert: log },
+				{ upsert: true, new: true }
+			);
+
 			return;
 		}
 	} catch {}
