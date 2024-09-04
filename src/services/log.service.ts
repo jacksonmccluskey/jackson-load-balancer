@@ -10,19 +10,23 @@ import models from '../models';
  * @param {Object} log
  * @returns {Promise<Log>}
  */
-export const writeLog = async (log: any) => {
+export const writeLog = async (log: any, shouldBeUnique?: boolean) => {
 	try {
 		if (mongoose.connection.readyState == 1) {
-			await models.Log.findOneAndUpdate(
-				{
-					status: log.status,
-					url: log.url,
-					message: log.message,
-					data: log.data,
-				},
-				{ $setOnInsert: log },
-				{ upsert: true, new: true }
-			);
+			if (shouldBeUnique) {
+				await models.Log.findOneAndUpdate(
+					{
+						status: log.status,
+						url: log.url,
+						message: log.message,
+						data: log.data,
+					},
+					{ $setOnInsert: log },
+					{ upsert: true, new: true }
+				);
+			} else {
+				await models.Log.create(log);
+			}
 
 			return;
 		}

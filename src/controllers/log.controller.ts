@@ -35,8 +35,10 @@ export const constructLog = (requestBody: any): ILog => {
 const writeLog = catchAsync(async (req: Request, res: Response) => {
 	const log = constructLog(req?.body);
 
+	const shouldBeUnique = req?.query?.shouldBeUnique === 'true';
+
 	try {
-		const writtenLog = await services.logService.writeLog(log);
+		const writtenLog = await services.logService.writeLog(log, shouldBeUnique);
 
 		res.status(httpStatus.OK).send(writtenLog);
 	} catch {
