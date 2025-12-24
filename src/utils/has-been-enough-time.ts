@@ -19,7 +19,7 @@ export type EventCategory =
 
 export const enoughTimeByEvent: Record<EventCategory, number> = {
 	SUCCESS: day,
-	WARNING: day,
+	WARNING: 12 * hour,
 	ERROR: 8 * hour,
 	TERMINATED: hour,
 	REDIS_DISCONNECTED: hour,

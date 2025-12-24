@@ -2,8 +2,15 @@
 // GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
 
 import mongoose from 'mongoose';
+import config from '../config/config';
 import logger from '../config/logger';
 import models from '../models';
+import {
+	enoughTimeByEvent,
+	EventCategory,
+} from '../utils/has-been-enough-time';
+import { sendEmailForEvent } from '../utils/send-email-for-event';
+import { ISendEmail } from './email.service';
 
 /**
  * Write A Log
@@ -27,6 +34,24 @@ export const writeLog = async (log: any, shouldBeUnique?: boolean) => {
 			} else {
 				await models.Log.create(log);
 			}
+
+			if (
+				!log?.status ||
+				!Object.keys(enoughTimeByEvent)
+					.map((key) => key)
+					.includes(log.status)
+			)
+				return;
+
+			const eventCategory = log.status as EventCategory;
+
+			const emailArgs: ISendEmail = {
+				to: config.email.to,
+				subject: `${eventCategory} Event`,
+				text: log.message,
+			};
+
+			await sendEmailForEvent(eventCategory, emailArgs);
 
 			return;
 		}

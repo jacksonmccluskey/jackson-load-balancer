@@ -5,13 +5,7 @@ import { emojiSelector } from '../utils/emoji-selector';
 import pick from '../utils/pick';
 import logger from '../config/logger';
 import httpStatus from 'http-status';
-import {
-	enoughTimeByEvent,
-	EventCategory,
-	hasBeenEnoughTime,
-} from '../utils/has-been-enough-time';
-import { sendEmailForEvent } from '../utils/send-email-for-event';
-import config from '../config/config';
+import { EventCategory } from '../utils/has-been-enough-time';
 
 interface ILog {
 	date: Date | string;
@@ -85,23 +79,9 @@ const logAnything = async (logContent: ILogAnything) => {
 
 	try {
 		await services.logService.writeLog(log);
-		return;
 	} catch {
 		await logger(JSON.stringify(log));
 	}
-
-	try {
-		if (!(Object.keys(enoughTimeByEvent) as string[]).includes(log.status))
-			return;
-
-		const eventCategory = log.status as EventCategory;
-
-		await sendEmailForEvent(eventCategory, {
-			to: config.email.to,
-			subject: `${eventCategory} Event`,
-			text: log.message,
-		});
-	} catch {}
 };
 
 export default {
