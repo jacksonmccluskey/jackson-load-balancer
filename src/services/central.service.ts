@@ -8,6 +8,8 @@ import config from '../config/config';
 import logController from '../controllers/log.controller';
 import { RequestMethod } from '../routes/v1/central.route';
 import redisService from './redis.service';
+import services from '.';
+import { hasBeenEnoughTime } from '../utils/has-been-enough-time';
 
 export interface IURLInAPIPool {
 	url: string;
@@ -235,12 +237,20 @@ const requestMethodToTargetURL = async (req: Request): Promise<any> => {
 		} catch (error) {
 			const defaultMessage = `Error Getting Target URL: ${targetURL}`;
 
-			await logController.logAnything({
+			const logArgs = {
 				status: 'ERROR',
 				title: 'Error Making Request From Load Balancer',
 				message: error ? error?.message : defaultMessage,
 				data: req.body,
 				url: req.originalUrl,
+			};
+
+			await logController.logAnything(logArgs);
+
+			await services.emailService.sendEmail({
+				to: config.email.to,
+				subject: `API Failure`,
+				text: logArgs.message,
 			});
 
 			return {

@@ -1,15 +1,22 @@
 import services from '../services';
 import { Request, Response } from 'express';
 import catchAsync from '../utils/catch-async';
-import { emojiSelector, Event } from '../utils/emoji-selector';
+import { emojiSelector } from '../utils/emoji-selector';
 import pick from '../utils/pick';
 import logger from '../config/logger';
 import httpStatus from 'http-status';
+import {
+	enoughTimeByEvent,
+	EventCategory,
+	hasBeenEnoughTime,
+} from '../utils/has-been-enough-time';
+import { sendEmailForEvent } from '../utils/send-email-for-event';
+import config from '../config/config';
 
 interface ILog {
 	date: Date | string;
 	emoji: string;
-	status: Event | string;
+	status: EventCategory | string;
 	title: string;
 	message: string;
 	data: any;
@@ -18,7 +25,7 @@ interface ILog {
 
 export const constructLog = (requestBody: any): ILog => {
 	const date: Date | string = requestBody?.date ?? new Date();
-	const status: Event | string = requestBody?.status ?? ('ERROR' as Event);
+	const status: EventCategory | string = requestBody?.status ?? 'ERROR';
 	const emoji: string = emojiSelector[status] ?? '🔥';
 
 	return {
@@ -82,6 +89,19 @@ const logAnything = async (logContent: ILogAnything) => {
 	} catch {
 		await logger(JSON.stringify(log));
 	}
+
+	try {
+		if (!(Object.keys(enoughTimeByEvent) as string[]).includes(log.status))
+			return;
+
+		const eventCategory = log.status as EventCategory;
+
+		await sendEmailForEvent(eventCategory, {
+			to: config.email.to,
+			subject: `${eventCategory} Event`,
+			text: log.message,
+		});
+	} catch {}
 };
 
 export default {

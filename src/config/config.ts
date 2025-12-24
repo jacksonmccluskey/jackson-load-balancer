@@ -62,6 +62,7 @@ const envVarsSchema = Joi.object()
 		CENTRAL_BEARER_TOKEN: Joi.string()
 			.description('Secret Token For Central API')
 			.required(),
+		SERVER_NAME: Joi.string().description('Instance Name / ID').required(),
 	})
 	.unknown();
 
@@ -116,4 +117,5 @@ export default {
 	cloudwatchLogsAWSRegion: envVars.CLOUDWATCH_LOGS_AWS_REGION,
 	logFileDirectoryName: envVars.LOG_FILE_DIRECTORY_NAME,
 	centralBearerToken: envVars.CENTRAL_BEARER_TOKEN,
+	serverName: envVars.SERVER_NAME,
 };

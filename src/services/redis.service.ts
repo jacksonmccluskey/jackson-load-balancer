@@ -167,6 +167,63 @@ const getValuesFromAPIPoolInRedis = async (): Promise<IAPIPool> => {
 	throw new Error("Redis Isn't Connected");
 };
 
+const TIME_TRACKER_PREFIX = 'timeTracker:lastTime:';
+const getTimeTrackerKey = (event: string) => `${TIME_TRACKER_PREFIX}${event}`;
+
+const hasBeenEnoughTimeLua = `
+local key = KEYS[1]
+local window = tonumber(ARGV[1])
+
+-- Use Redis server time (seconds, microseconds)
+local t = redis.call('TIME')
+local nowMs = (tonumber(t[1]) * 1000) + math.floor(tonumber(t[2]) / 1000)
+
+local last = redis.call('GET', key)
+
+-- If missing OR window==0 => allow and set
+if (not last) or (window == 0) then
+  if window > 0 then
+    redis.call('SET', key, nowMs, 'PX', window * 2)
+  else
+    redis.call('SET', key, nowMs)
+  end
+  return 1
+end
+
+local lastNum = tonumber(last)
+
+-- Normalize old values that were stored in seconds (10-digit-ish)
+-- If last < 1e11, treat as seconds and convert to ms.
+if lastNum and lastNum < 100000000000 then
+  lastNum = lastNum * 1000
+end
+
+local elapsed = nowMs - lastNum
+if elapsed >= window then
+  redis.call('SET', key, nowMs, 'PX', window * 2)
+  return 1
+end
+
+return 0
+`;
+
+const hasBeenEnoughTimeInRedis = async (
+	event: string,
+	enoughTimeMs: number
+): Promise<boolean> => {
+	if (redis?.status !== 'ready') throw new Error("Redis Isn't Connected");
+
+	const key = getTimeTrackerKey(event);
+	const result = await redis.eval(
+		hasBeenEnoughTimeLua,
+		1,
+		key,
+		String(enoughTimeMs)
+	);
+
+	return Number(result) === 1;
+};
+
 export default {
 	getAPIPoolFromRedis,
 	getURLsFromAPIPoolInRedis,
@@ -176,4 +233,5 @@ export default {
 	removeURLFromAPIPoolInRedis,
 	replaceURLsFromAPIPoolInRedis,
 	getValuesFromAPIPoolInRedis,
+	hasBeenEnoughTimeInRedis,
 };

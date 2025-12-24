@@ -1,21 +1,14 @@
 // Copyright © 2024 Jackson McCluskey
 // GitHub @jacksonmccluskey [https://github.com/jacksonmccluskey]
 
-export type Event =
-	| 'PROCESSING'
-	| 'SUCCESS'
-	| 'WARNING'
-	| 'ERROR'
-	| 'TERMINATED'
-	| 'INBOUND'
-	| 'OUTBOUND';
+import { EventCategory } from './has-been-enough-time';
 
-export const emojiSelector = {
-	PROCESSING: '🚀',
+export const emojiSelector: Record<EventCategory, string> = {
 	SUCCESS: '🟩',
 	WARNING: '🟨',
 	ERROR: '🟥',
 	TERMINATED: '💀',
-	INBOUND: '🔗',
-	OUTBOUND: '🛰️',
+	REDIS_DISCONNECTED: '💀',
+	MONGO_DISCONNECTED: '💀',
+	API_FAILURE: '💀',
 };
