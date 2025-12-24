@@ -10,6 +10,7 @@ import { RequestMethod } from '../routes/v1/central.route';
 import redisService from './redis.service';
 import services from '.';
 import { hasBeenEnoughTime } from '../utils/has-been-enough-time';
+import { sendEmailForEvent } from '../utils/send-email-for-event';
 
 export interface IURLInAPIPool {
 	url: string;
@@ -247,9 +248,9 @@ const requestMethodToTargetURL = async (req: Request): Promise<any> => {
 
 			await logController.logAnything(logArgs);
 
-			await services.emailService.sendEmail({
+			await sendEmailForEvent('API_FAILURE', {
 				to: config.email.to,
-				subject: `API Failure`,
+				subject: 'API Failure',
 				text: logArgs.message,
 			});
 

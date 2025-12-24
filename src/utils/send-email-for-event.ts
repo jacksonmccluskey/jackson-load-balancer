@@ -1,7 +1,8 @@
 import config from '../config/config';
-import { ISendEmail, sendEmail } from '../services/email.service';
 import { emojiSelector } from './emoji-selector';
 import { EventCategory, hasBeenEnoughTime } from './has-been-enough-time';
+import services from '../services';
+import { ISendEmail } from '../services/email.service';
 
 export const sendEmailForEvent = async (
 	event: EventCategory,
@@ -11,9 +12,10 @@ export const sendEmailForEvent = async (
 		const shouldNotify = await hasBeenEnoughTime(event);
 
 		if (shouldNotify) {
-			await sendEmail({
-				...sendEmailArgs,
+			await services.emailService.sendEmail({
+				to: config.email.to,
 				subject: `${emojiSelector[event]} ${sendEmailArgs.subject} [${config.serverName}]`,
+				text: sendEmailArgs.text,
 			});
 		}
 	} catch {}

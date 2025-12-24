@@ -4,32 +4,6 @@ import logController from '../controllers/log.controller';
 
 let transport: any;
 
-try {
-	transport = nodemailer.createTransport(config.email.smtp);
-	/* istanbul ignore next */
-	if (config.env !== 'test') {
-		transport
-			.verify()
-			.then(
-				async () =>
-					await logController.logAnything({
-						status: 'SUCCESS',
-						title: 'Email Server Connected',
-						message: `Connected To Email Server: ${config.email.smtp.host}`,
-					})
-			)
-			.catch(
-				async () =>
-					await logController.logAnything({
-						status: 'WARNING',
-						title: 'Email Server Connection Failed',
-						message:
-							'Unable To Connect To Email Server. Make Sure You Configured SMTP Options In .env',
-					})
-			);
-	}
-} catch {}
-
 export interface ISendEmail {
 	to: string;
 	subject: string;
@@ -43,6 +17,34 @@ export interface ISendEmail {
  * @returns {Promise}
  */
 export const sendEmail = async ({ to, subject, text }: ISendEmail) => {
+	try {
+		if (!transport) {
+			transport = nodemailer.createTransport(config.email.smtp);
+			/* istanbul ignore next */
+			if (config.env !== 'test') {
+				transport
+					.verify()
+					.then(
+						async () =>
+							await logController.logAnything({
+								status: 'SUCCESS',
+								title: 'Email Server Connected',
+								message: `Connected To Email Server: ${config.email.smtp.host}`,
+							})
+					)
+					.catch(
+						async () =>
+							await logController.logAnything({
+								status: 'WARNING',
+								title: 'Email Server Connection Failed',
+								message:
+									'Unable To Connect To Email Server. Make Sure You Configured SMTP Options In .env',
+							})
+					);
+			}
+		}
+	} catch {}
+
 	try {
 		const msg = { from: config.email.from, to, subject, text };
 		await transport.sendMail(msg);

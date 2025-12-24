@@ -6,8 +6,6 @@ import mongoose from 'mongoose';
 import app from './app';
 import config from './config/config';
 import logController from './controllers/log.controller';
-import { sendEmail } from './services/email.service';
-import { hasBeenEnoughTime } from './utils/has-been-enough-time';
 import { sendEmailForEvent } from './utils/send-email-for-event';
 
 let server: http.Server | undefined;
@@ -59,9 +57,9 @@ const exitHandler = () => {
 				message: error ? JSON.stringify(error) : 'Unknown Error',
 			});
 
-			await sendEmail({
+			await sendEmailForEvent('TERMINATED', {
 				to: config.email.to,
-				subject: `${config.host} Server Closing...`,
+				subject: `${config.serverName} Server Closing...`,
 				text: error ? JSON.stringify(error) : 'Unknown Error',
 			});
 
