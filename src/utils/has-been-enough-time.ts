@@ -19,9 +19,9 @@ export type EventCategory =
 
 export const enoughTimeByEvent: Record<EventCategory, number> = {
 	SUCCESS: day,
-	WARNING: 12 * hour,
-	ERROR: 8 * hour,
-	TERMINATED: hour,
+	WARNING: 8 * hour,
+	ERROR: hour,
+	TERMINATED: 10 * minute,
 	REDIS_DISCONNECTED: hour,
 	MONGO_DISCONNECTED: hour,
 	API_FAILURE: hour,

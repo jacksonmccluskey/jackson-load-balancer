@@ -47,8 +47,10 @@ export const writeLog = async (log: any, shouldBeUnique?: boolean) => {
 
 			const emailArgs: ISendEmail = {
 				to: config.email.to,
-				subject: `${eventCategory} Event`,
-				text: log.message,
+				subject: `${eventCategory}`,
+				text: `${log.date}${log.message ? '\n' + log.message : ''}${
+					log.data ? '\n' + JSON.stringify(log.data) : ''
+				}`,
 			};
 
 			await sendEmailForEvent(eventCategory, emailArgs);

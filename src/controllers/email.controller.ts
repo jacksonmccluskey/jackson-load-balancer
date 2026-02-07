@@ -13,15 +13,16 @@ const constructEmail = (requestBody: any) => {
 	}
 
 	const status = requestBody.status ?? 'ERROR';
-	const emoji = requestBody.emoji ?? emojiSelector[status];
+	const emoji = requestBody.emoji ?? emojiSelector[status] ?? '🔥';
 	const subject = requestBody.title ?? 'From Jackson Load Balancer';
 	const text = requestBody.message ?? subject;
 	const data = requestBody.data;
+	const date = requestBody.date ?? new Date().toUTCString();
 
 	return {
 		to: requestBody.to,
 		subject: `${emoji} ${subject}`,
-		text: `${text}${data ? `\n\n${JSON.stringify(data)}` : ''}`,
+		text: `${text}${data ? `\n\n${JSON.stringify(data)}` : ''}\n\n${date}`,
 	};
 };
 

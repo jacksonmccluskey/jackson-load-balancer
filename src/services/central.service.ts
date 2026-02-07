@@ -159,7 +159,7 @@ interface IGetCurrentURL {
 }
 
 /**
- * Get Current URL From Database
+ * Get Current URL From Cache
  * @param {IGetCurrentURL}
  * @returns {string}
  */
